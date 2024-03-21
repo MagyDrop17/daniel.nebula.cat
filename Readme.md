@@ -1,0 +1,1 @@
+# Començament del Readme
