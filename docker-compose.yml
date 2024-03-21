@@ -1,0 +1,50 @@
+version: '3.8'
+
+networks:
+  portfolio_net:
+    driver: bridge
+
+services:
+  
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /home/dark/sites/nginx/default/default.conf:/etc/nginx/conf.d/default.conf
+      - /home/dark/sites/portfolio:/var/www/portfolio
+      - /home/dark/sites/certbot/conf:/etc/letsencrypt:ro
+      - /home/dark/sites/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - portfolio
+    networks:
+      - portfolio_net
+      
+  portfolio:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    container_name: portfolio
+    networks:
+      - portfolio_net
+  
+  composer:
+    image: composer:latest
+    container_name: composer
+    volumes:
+      - /home/dark/sites/portfolio:/var/www/html
+    working_dir: /var/www/html
+    networks:
+      - portfolio_net
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - /home/dark/sites/certbot/conf:/etc/letsencrypt:rw
+      - /home/dark/sites/certbot/www:/var/www/certbot:rw
+    depends_on:
+      - nginx
+    command: certonly --webroot --webroot-path=/var/www/certbot --email 
